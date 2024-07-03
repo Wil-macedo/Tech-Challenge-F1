@@ -17,9 +17,7 @@ def requestToJson(result):
             entry = {headers[i]: values[i].encode('ISO-8859-1').decode('utf-8', 'ignore') for i in range(len(headers))}
             data.append(entry)
         
-    json_data = json.dumps(data, ensure_ascii=False)
-    
-    return json_data
+    return data
 
 
 def csvToJson(csvFile):

@@ -3,6 +3,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from libs.users import users
 import requests
 from libs.transformationData import *
+from bs4 import BeautifulSoup
 
 
 app = Flask(__name__)
@@ -37,7 +38,7 @@ def login():
 
 
 
-@app.route('/producao', methods = ['POST'])
+@app.route('/producao', methods = ['GET'])
 @jwt_required()
 def producao():
     result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv")
@@ -48,18 +49,56 @@ def producao():
     return jsonify(json_data)
 
 
-@app.route('/processamento', methods = ['POST'])
+@app.route('/processamento', methods = ['GET'])
 @jwt_required()
 def processamento():
-    result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/ProcessaViniferas.csv")
+
+    jsonResult = {}
+    queryString = ""
+    ano = request.args.get("ano", default=None)
     
-    json_data = requestToJson(result) if result.status_code == 200\
-        else csvToJson("Producao.csv")
+    if ano is not None:
+        queryString = f"ano={ano}"
+
+    links = {
+        "Processamento_Viníferas ":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_01&opcao=opt_03&{queryString}",
+        "Processamento_Americanas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_03&{queryString}",
+        "Processamento_Uvas_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_03&{queryString}",
+        "Sem_Classificacao":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_03&{queryString}"
+        }
+    
+    for key, link in links.items():
         
-    return jsonify(json_data)
+        response = requests.get(link)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        table = soup.find_all('table')[4]
+        
+        df = pd.read_html(str(table))[0]  
+        
+        try:
+            df = df[["Cultivar", "Quantidade (Kg)"]]    
+            
+            for index, row in df.iterrows():
+                value:str = row['Quantidade (Kg)']
+                result = value.split(".")
+                
+                if result[0].isdigit():
+                    continue
+                else:
+                    df.drop(index, inplace=True)
+                    
+            jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
+            jsonData:dict = json.loads(jsonData)
+            
+            jsonResult[key] = jsonData
+ 
+        except Exception as ex:
+            print(ex)    
+
+    return jsonify(jsonResult)
 
 
-@app.route('/comercializacao', methods = ['POST'])
+@app.route('/comercializacao', methods = ['GET'])
 @jwt_required()
 def comercializacao():
     result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/Comercio.csv")
@@ -70,7 +109,7 @@ def comercializacao():
     return jsonify(json_data)
 
 
-@app.route('/importacao', methods = ['POST'])
+@app.route('/importacao', methods = ['GET'])
 @jwt_required()
 def importacao():
     result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/ImpVinhos.csv")
@@ -81,14 +120,15 @@ def importacao():
     return jsonify(json_data)
 
 
-@app.route('/expotacao', methods = ['POST'])
+@app.route('/expotacao', methods = ['GET'])
 @jwt_required()
 def expotacao():
     result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/ExpVinho.csv")
     
     json_data = requestToJson(result) if result.status_code == 200\
         else csvToJson("ExpVinho.csv")
-        
+    
+    
     return jsonify(json_data)
 
 
