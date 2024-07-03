@@ -18,7 +18,6 @@ def index():
     return "GET INDEX, infomações"
 
 
-
 @app.route('/login', methods=['POST'])
 def login():
 
@@ -37,16 +36,42 @@ def login():
     return jsonify({'error': 'Credenciais inválidas'}), 401
 
 
-
 @app.route('/producao', methods = ['GET'])
 @jwt_required()
 def producao():
-    result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/Producao.csv")
     
-    json_data = requestToJson(result) if result.status_code == 200\
-        else csvToJson("Producao.csv")
+    queryString = ""
+    ano = request.args.get("ano", default=None)
+    
+    if ano is not None:
+        queryString = f"ano={ano}"
+
+    response = requests.get(f"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_02&{queryString}")
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
+    table = soup.find_all('table')[4]
+    
+    df = pd.read_html(str(table))[0]  
+    
+    try:
+        df = df[["Produto", "Quantidade (L.)"]]    
         
-    return jsonify(json_data)
+        for index, row in df.iterrows():
+            value:str = row["Quantidade (L.)"]
+            result = value.split(".")
+            
+            if result[0].isdigit():
+                continue
+            else:
+                df.drop(index, inplace=True)
+                
+        jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
+        jsonData:dict = json.loads(jsonData)
+
+    except Exception as ex:
+        print(ex)    
+
+    return jsonify(jsonData)
 
 
 @app.route('/processamento', methods = ['GET'])
