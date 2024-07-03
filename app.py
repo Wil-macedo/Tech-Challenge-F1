@@ -1,9 +1,7 @@
-from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token
+from flask import Flask, jsonify, request
 from libs.users import users
-import requests
-from libs.transformationData import *
-from bs4 import BeautifulSoup
+from libs.requestFunction import myRequest
 
 
 app = Flask(__name__)
@@ -26,7 +24,6 @@ def login():
     password = loginInfo['password']
 
     # Verifique se as credenciais são válidas (consulte seu banco de dados)
-    
     for _ , value in users.items():
 
         if (username == value["username"]) and (password == value["password"]):
@@ -40,37 +37,11 @@ def login():
 @jwt_required()
 def producao():
     
-    queryString = ""
-    ano = request.args.get("ano", default=None)
+    link = {
+        "Producao":"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_02&"
+        }
     
-    if ano is not None:
-        queryString = f"ano={ano}"
-
-    response = requests.get(f"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_02&{queryString}")
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    table = soup.find_all('table')[4]
-    
-    df = pd.read_html(str(table))[0]  
-    
-    try:
-        df = df[["Produto", "Quantidade (L.)"]]    
-        
-        for index, row in df.iterrows():
-            value:str = row["Quantidade (L.)"]
-            result = value.split(".")
-            
-            if result[0].isdigit():
-                continue
-            else:
-                df.drop(index, inplace=True)
-                
-        jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
-        jsonData:dict = json.loads(jsonData)
-
-    except Exception as ex:
-        print(ex)    
-
+    jsonData = myRequest(link, ["Produto", "Quantidade (L.)"])
     return jsonify(jsonData)
 
 
@@ -78,191 +49,58 @@ def producao():
 @jwt_required()
 def processamento():
 
-    jsonResult = {}
-    queryString = ""
-    ano = request.args.get("ano", default=None)
-    
-    if ano is not None:
-        queryString = f"ano={ano}"
-
     links = {
-        "Processamento_Viníferas ":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_01&opcao=opt_03&{queryString}",
-        "Processamento_Americanas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_03&{queryString}",
-        "Processamento_Uvas_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_03&{queryString}",
-        "Sem_Classificacao":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_03&{queryString}"
+        "Processamento_Viníferas ":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_01&opcao=opt_03&",
+        "Processamento_Americanas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_03&",
+        "Processamento_Uvas_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_03&",
+        "Sem_Classificacao":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_03&"
         }
     
-    for key, link in links.items():
-        
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find_all('table')[4]
-        
-        df = pd.read_html(str(table))[0]  
-        
-        try:
-            df = df[["Cultivar", "Quantidade (Kg)"]]    
-            
-            for index, row in df.iterrows():
-                value:str = row['Quantidade (Kg)']
-                result = value.split(".")
-                
-                if result[0].isdigit():
-                    continue
-                else:
-                    df.drop(index, inplace=True)
-                    
-            jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
-            jsonData:dict = json.loads(jsonData)
-            
-            jsonResult[key] = jsonData
- 
-        except Exception as ex:
-            print(ex)    
-
-    return jsonify(jsonResult)
+    jsonData = myRequest(links, ["Cultivar", "Quantidade (Kg)"])
+    return jsonify(jsonData)
 
 
 @app.route('/comercializacao', methods = ['GET'])
 @jwt_required()
 def comercializacao():
     
-    queryString = ""
-    ano = request.args.get("ano", default=None)
+    link = {
+        "Comercializacao":"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_04&"
+        }
     
-    if ano is not None:
-        queryString = f"ano={ano}"
-
-    response = requests.get(f"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_04&{queryString}")
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    table = soup.find_all('table')[4]
-    
-    df = pd.read_html(str(table))[0]  
-    
-    try:
-        df = df[["Produto", "Quantidade (L.)"]]    
-        
-        for index, row in df.iterrows():
-            value:str = row["Quantidade (L.)"]
-            result = value.split(".")
-            
-            if result[0].isdigit() or (result[0]=="-"):
-                continue
-            else:
-                df.drop(index, inplace=True)
-                
-        jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
-        jsonData:dict = json.loads(jsonData)
-
-    except Exception as ex:
-        print(ex)    
-
+    jsonData = myRequest(link, ["Produto", "Quantidade (L.)"])
     return jsonify(jsonData)
+
 
 @app.route('/importacao', methods = ['GET'])
 @jwt_required()
 def importacao():
-
-    jsonResult = {}
-    queryString = ""
-    ano = request.args.get("ano", default=None)
     
-    if ano is not None:
-        queryString = f"ano={ano}"
-
     links = {
-        "Vinhos_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_05&{queryString}",
-        "Espumantes":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_05&{queryString}",
-        "Uvas_Frescas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_05&{queryString}",
-        "Uvas_Passas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_05&{queryString}",
-        "Suco_De_Uva":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_05&opcao=opt_05&{queryString}"
-        
+        "Vinhos_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_05&",
+        "Espumantes":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_05&",
+        "Uvas_Frescas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_05&",
+        "Uvas_Passas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_05&",
+        "Suco_De_Uva":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_05&opcao=opt_05&"
         }
     
-    for key, link in links.items():
-        
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find_all('table')[4]
-        
-        df = pd.read_html(str(table))[0]  
-        
-        try:
-            df = df[["Países", "Quantidade (Kg)", "Valor (US$)"]]    
-            
-            for index, row in df.iterrows():
-                value:str = row['Quantidade (Kg)']
-                result = value.split(".")
-                
-                if result[0].isdigit() or (result[0]=="-"):
-                    continue
-                else:
-                    df.drop(index, inplace=True)
-                    
-            jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
-            jsonData:dict = json.loads(jsonData)
-            
-            jsonResult[key] = jsonData
- 
-        except Exception as ex:
-            print(ex)    
-
-    return jsonify(jsonResult)
+    jsonData = myRequest(links, ["Países", "Quantidade (Kg)", "Valor (US$)"])
+    return jsonify(jsonData)
 
 
 @app.route('/exportacao', methods = ['GET'])
 @jwt_required()
 def exportacao():
 
-    jsonResult = {}
-    queryString = ""
-    ano = request.args.get("ano", default=None)
-    
-    if ano is not None:
-        queryString = f"ano={ano}"
-
     links = {
         
-        "Vinhos_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_01&opcao=opt_06&{queryString}",
-        "Espumantes":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_06&{queryString}",
-        "Uvas_Frescas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_06&{queryString}",
-        "Suco_De_Uva":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_06&{queryString}",
+        "Vinhos_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_01&opcao=opt_06&",
+        "Espumantes":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_06&",
+        "Uvas_Frescas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_06&",
+        "Suco_De_Uva":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_06&",
         }
-    
-    for key, link in links.items():
-        
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find_all('table')[4]
-        
-        df = pd.read_html(str(table))[0]  
-        
-        try:
-            df = df[["Países", "Quantidade (Kg)", "Valor (US$)"]]    
-            
-            for index, row in df.iterrows():
-                value:str = row['Quantidade (Kg)']
-                result = value.split(".")
-                
-                if result[0].isdigit() or (result[0]=="-"):
-                    continue
-                else:
-                    df.drop(index, inplace=True)
-                    
-            jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
-            jsonData:dict = json.loads(jsonData)
-            
-            jsonResult[key] = jsonData
  
-        except Exception as ex:
-            print(ex)    
-
-    return jsonify(jsonResult)
-
-
-
-
-
+    jsonData = myRequest(links, ["Países", "Quantidade (Kg)", "Valor (US$)"])
+    return jsonify(jsonData)
 
 app.run(host='0.0.0.0')
