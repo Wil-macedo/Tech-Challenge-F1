@@ -147,7 +147,7 @@ def comercializacao():
             value:str = row["Quantidade (L.)"]
             result = value.split(".")
             
-            if result[0].isdigit():
+            if result[0].isdigit() or (result[0]=="-"):
                 continue
             else:
                 df.drop(index, inplace=True)
@@ -160,16 +160,57 @@ def comercializacao():
 
     return jsonify(jsonData)
 
-
 @app.route('/importacao', methods = ['GET'])
 @jwt_required()
 def importacao():
-    result = requests.get("http://vitibrasil.cnpuv.embrapa.br/download/ImpVinhos.csv")
+
+    jsonResult = {}
+    queryString = ""
+    ano = request.args.get("ano", default=None)
     
-    json_data = requestToJson(result) if result.status_code == 200\
-        else csvToJson("ImpVinhos.csv")
+    if ano is not None:
+        queryString = f"ano={ano}"
+
+    links = {
+        "Vinhos_De_Mesa":f"http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_05&{queryString}",
+        "Espumantes":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_02&opcao=opt_05&{queryString}",
+        "Uvas_Frescas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_03&opcao=opt_05&{queryString}",
+        "Uvas_Passas":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_04&opcao=opt_05&{queryString}",
+        "Suco_De_Uva":f"http://vitibrasil.cnpuv.embrapa.br/index.php?subopcao=subopt_05&opcao=opt_05&{queryString}"
         
-    return jsonify(json_data)
+        }
+    
+    for key, link in links.items():
+        
+        response = requests.get(link)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        table = soup.find_all('table')[4]
+        
+        df = pd.read_html(str(table))[0]  
+        
+        try:
+            df = df[["Países", "Quantidade (Kg)", "Valor (US$)"]]    
+            
+            for index, row in df.iterrows():
+                value:str = row['Quantidade (Kg)']
+                result = value.split(".")
+                
+                if result[0].isdigit() or (result[0]=="-"):
+                    continue
+                else:
+                    df.drop(index, inplace=True)
+                    
+            jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
+            jsonData:dict = json.loads(jsonData)
+            
+            jsonResult[key] = jsonData
+ 
+        except Exception as ex:
+            print(ex)    
+
+    return jsonify(jsonResult)
+
+
 
 
 @app.route('/expotacao', methods = ['GET'])
