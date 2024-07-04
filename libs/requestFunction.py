@@ -13,11 +13,11 @@ def myRequest(links:dict, columns:list):
     
     if ano is not None:
         queryString = f"ano={ano}"
-
-    copylinks = links.copy()   # Cópia somente para iteração.
-    for key, value in copylinks.items():
-        links[key+"_"+str(ano)] = value + queryString
-        del links[key]
+        
+        copylinks = links.copy()   # Cópia somente para iteração.
+        for key, value in copylinks.items():
+            links[key+"_"+str(ano)] = value + queryString
+            del links[key]
 
     
     for key, link in links.items():
