@@ -103,4 +103,4 @@ def exportacao():
     jsonData = myRequest(links, ["Países", "Quantidade (Kg)", "Valor (US$)"])
     return jsonify(jsonData)
 
-app.run(host='0.0.0.0')
+app.run()
