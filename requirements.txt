@@ -3,3 +3,4 @@ flask-JWT-Extended
 requests
 pandas
 beautifulsoup4
+lxml
