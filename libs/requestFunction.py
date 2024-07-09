@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from flask import request
+from libs.validations import isValidYearParam
+from errors import InvalidParam, ConnectionError
 
 
 def myRequest(links:dict, columns:list):
@@ -12,6 +14,10 @@ def myRequest(links:dict, columns:list):
     ano = request.args.get("ano", default=None)
     
     if ano is not None:
+
+        if not isValidYearParam(ano):
+            raise InvalidParam(f"Ano ou Intervalo inválido")
+
         queryString = f"ano={ano}"
         
         copylinks = links.copy()   # Cópia somente para iteração.
@@ -21,14 +27,12 @@ def myRequest(links:dict, columns:list):
 
     
     for key, link in links.items():
-        
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        table = soup.find_all('table')[4]
-        
-        df = pd.read_html(str(table))[0]  
-        
         try:
+            response = requests.get(link)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            table = soup.find_all('table')[4]
+        
+            df = pd.read_html(str(table))[0]
             df = df[columns]    
             
             for index, row in df.iterrows():
@@ -47,5 +51,6 @@ def myRequest(links:dict, columns:list):
  
         except Exception as ex:
             print(ex)
+            raise ConnectionError(f"Erro ao carregar os dados")
         
     return jsonResult   

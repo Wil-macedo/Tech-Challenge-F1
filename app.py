@@ -2,6 +2,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from flask import Flask, jsonify, request
 from libs.users import users
 from libs.requestFunction import myRequest
+from errors import InvalidParam, ConnectionError
 
 
 app = Flask(__name__)
@@ -102,5 +103,13 @@ def exportacao():
  
     jsonData = myRequest(links, ["Países", "Quantidade (Kg)", "Valor (US$)"])
     return jsonify(jsonData)
+
+@app.errorhandler(InvalidParam)
+def handle_bad_request(e):
+    return jsonify({"error": str(e) }), 400
+
+@app.errorhandler(ConnectionError)
+def handle_internal_error(e):
+    return jsonify({"error": str(e) }), 500
 
 app.run()
