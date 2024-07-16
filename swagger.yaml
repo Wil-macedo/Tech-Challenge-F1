@@ -11,7 +11,7 @@ externalDocs:
   url: http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_01
 
 servers:
-  - url: https://techchallenge01.azurewebsites.net
+  - url: https://techchallenge02.azurewebsites.net
     description: Servidor produção
 
 components:
