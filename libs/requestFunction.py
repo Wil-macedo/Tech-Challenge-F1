@@ -27,30 +27,33 @@ def myRequest(links:dict, columns:list):
 
     
     for key, link in links.items():
-        try:
-            response = requests.get(link)
-            soup = BeautifulSoup(response.text, 'html.parser')
-            table = soup.find_all('table')[4]
-        
-            df = pd.read_html(str(table))[0]
-            df = df[columns]    
-            
-            for index, row in df.iterrows():
-                value:str = row[columns[1]]  # Segunda coluna tem os dados
-                result = value.split(".")
+        if key != "Sem_Classificacao":  # Remove dados não classificados
+            try:
+                response = requests.get(link)
+                soup = BeautifulSoup(response.text, 'html.parser')
                 
-                if result[0].isdigit():
-                    continue
-                else:
-                    df.drop(index, inplace=True)
+                table = soup.find_all('table')[4]
+
+                df = pd.read_html(str(table))[0]
+                
+                df = df[columns]    
+                
+                for index, row in df.iterrows():
+                    value:str = row[columns[1]]  # Segunda coluna tem os dados
+                    result = value.split(".")
                     
-            jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
-            jsonData:dict = json.loads(jsonData)
-            
-            jsonResult[key] = jsonData
- 
-        except Exception as ex:
-            print(ex)
-            raise ConnectionError(f"Erro ao carregar os dados")
+                    if result[0].isdigit():
+                        continue
+                    else:
+                        df.drop(index, inplace=True)
+                
+                jsonData = df.to_json(orient='records', lines=False)  # Use 'records' for a different format
+                
+                jsonData:dict = json.loads(jsonData)
+                
+                jsonResult[key] = jsonData
+        
+            except Exception as ex:
+                raise ConnectionError(f"Erro ao carregar os dados")
         
     return jsonResult   
