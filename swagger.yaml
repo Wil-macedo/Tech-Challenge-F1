@@ -1,0 +1,135 @@
+openapi: 3.0.1
+info:
+  title: TECH CHALLENGE MLE
+  description: API para consulta de dados no site da Embrapa
+  contact:
+    email: wi.willian99@hotmail.com 
+  version: 0.0.1
+
+externalDocs:
+  description: Site de origem dos dados.
+  url: http://vitibrasil.cnpuv.embrapa.br/index.php?opcao=opt_01
+
+servers:
+  - url: https://techchallenge01.azurewebsites.net
+    description: Servidor produção
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    
+    bearerAuth: 
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+paths:
+  /login:
+    post:
+      security:
+        - basicAuth: []
+      
+      responses:
+        200: 
+          description: Token recebido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token: # Token da sessão
+                    type: string
+        401:
+          description: Não autorizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: # Credenciais inválidas
+                    type: string
+      
+  /producao:
+    get:
+      summary: Dados de produção de vinhos
+  
+      parameters:
+        - in: query
+          name: ano
+          schema:
+            type: string
+            pattern: '^\d{4}(-\d{4})?$'  # Expressão regular para um ano ou um intervalo de anos
+
+          description: The number of items to skip before starting to collect the result set
+        
+      security: 
+        - bearerAuth: []
+      responses:
+        200:
+          description: Requisição bem sucedida, com dados retornados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Producao:  # Dados de produção de vinhos
+                    type: object
+                    properties:
+                      Produto:
+                        type: string
+                        example: VINHO DE MESA
+                      Quantidade(L.): 
+                        type: string
+                        example: 169.762.429
+        
+        400:
+         description: Intervalo de anos inválido
+         content:
+          application/json:
+  
+            examples:
+              
+              Intervalo inválido:
+                summary: Ano inválido
+                value:
+                  msg: Ano ou Intervalo inválido
+            
+            
+        401:
+          description: Sem autorização/ Token inválido
+          content:
+              application/json:
+               
+                examples:
+                  
+                  JWT Invalid Token:
+                    summary: JWT Token Format Invalid
+                    value:
+                      msg: Not enough segments
+                      
+                  Invalid Token:
+                    summary: Invalid Token
+                    value:
+                      msg: Invalid Token
+                      
+                  Token has expired:
+                    summary: Token Has Expired
+                    value:
+                      msg: Token has expired
+      
+        422:
+         description: Sem autorização/ Token inválido
+         content:
+          application/json:
+  
+            examples:
+              
+              JWT Invalid Token:
+                summary: JWT Token format invalid
+                value:
+                  msg: Invalid header padding
+            
+                
+  

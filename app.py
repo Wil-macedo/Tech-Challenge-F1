@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from libs.users import users
 from libs.requestFunction import myRequest
 from errors import InvalidParam, ConnectionError
+from flasgger import Swagger
 
 
 app = Flask(__name__)
@@ -11,10 +12,19 @@ app = Flask(__name__)
 app.config['JWT_SECRET_KEY'] = 'mykey'  # Troque para algo mais seguro em produção1
 jwt = JWTManager(app)
 
+try:
+    app.config['SWAGGER'] = {
+        'openapi': '3.0.1'
+    }
 
-@app.route('/',methods = ['POST'])
+    swagger = Swagger(app, template_file='swagger.yaml')
+
+except Exception as ex:
+    print("FALHA Swagger")
+
+@app.route('/', methods=["GET"])
 def index():
-    return "GET INDEX, infomações"
+    return "DATA ATUALIZAÇÃO 16-07-2024"
 
 
 @app.route('/login', methods=['POST'])
@@ -112,4 +122,6 @@ def handle_bad_request(e):
 def handle_internal_error(e):
     return jsonify({"error": str(e) }), 500
 
-app.run()
+
+if __name__ == '__main__':
+   app.run()
