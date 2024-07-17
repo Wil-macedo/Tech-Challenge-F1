@@ -24,7 +24,56 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
+  
+  parameters:
+    anoParam:
+      in: query
+      name: ano
+      schema:
+        type: string
+        pattern: '^\d{4}(-\d{4})?$'
+      description: Intervalo de anos inválido. 
+        
+  responses:
+    Parametro_Invalido:
+     description: Intervalo de anos inválido.
+     content:
+      application/json:
+        examples:
+          Intervalo inválido:
+            summary: Ano ou Intervalo inválido.
+            value:
+              msg: Ano ou Intervalo inválido.
+        
+    Sem_Autorizacao1:
+      description: Sem autorização/ Token inválido.
+      content:
+        application/json:
+          examples:
+            JWT Invalid Token:
+              summary: JWT Token Format Invalid.
+              value:
+                msg: Not enough segments.
+                
+            Invalid Token:
+              summary: Invalid Token.
+              value:
+                msg: Invalid Token.
+                
+            Token has expired:
+              summary: Token Has Expired.
+              value:
+                msg: Token has expired.
+  
+    Sem_Autorizacao2:
+     description: Sem autorização/ Token inválido.
+     content:
+      application/json:
+        examples:
+          JWT Invalid Token:
+            summary: JWT Token format invalid.
+            value:
+              msg: Invalid header padding.
 paths:
   /login:
     post:
@@ -33,7 +82,7 @@ paths:
       
       responses:
         200: 
-          description: Token recebido
+          description: Token recebido.
           content:
             application/json:
               schema:
@@ -42,7 +91,7 @@ paths:
                   access_token: # Token da sessão
                     type: string
         401:
-          description: Não autorizado
+          description: Não autorizado.
           content:
             application/json:
               schema:
@@ -50,23 +99,15 @@ paths:
                 properties:
                   error: # Credenciais inválidas
                     type: string
-      
   /producao:
     get:
       summary: Dados de produção de vinhos
-  
       parameters:
-        - in: query
-          name: ano
-          schema:
-            type: string
-            pattern: '^\d{4}(-\d{4})?$'  # Expressão regular para um ano ou um intervalo de anos
-
-          description: The number of items to skip before starting to collect the result set
-        
+        - $ref: '#/components/parameters/anoParam'
       security: 
         - bearerAuth: []
       responses:
+
         200:
           description: Requisição bem sucedida, com dados retornados
           content:
@@ -83,53 +124,192 @@ paths:
                       Quantidade(L.): 
                         type: string
                         example: 169.762.429
-        
-        400:
-         description: Intervalo de anos inválido
-         content:
-          application/json:
+        '400':
+          $ref: '#/components/responses/Parametro_Invalido'
+        '401':
+          $ref: '#/components/responses/Sem_Autorizacao1'
   
-            examples:
-              
-              Intervalo inválido:
-                summary: Ano inválido
-                value:
-                  msg: Ano ou Intervalo inválido
-            
-            
-        401:
-          description: Sem autorização/ Token inválido
+  /processamento:
+    get:
+      summary: Dados de processamento
+      parameters:
+        - $ref: '#/components/parameters/anoParam'
+      security: 
+        - bearerAuth: []
+      responses:
+        200:
+          description: Requisição bem sucedida, com dados retornados
           content:
-              application/json:
-               
-                examples:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Processamento_Americanas:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Cultivar:
+                          type: string
+                          example: TINTAS
+                        Quantidade (Kg): 
+                          type: string
+                          example: 502.666.358
                   
-                  JWT Invalid Token:
-                    summary: JWT Token Format Invalid
-                    value:
-                      msg: Not enough segments
-                      
-                  Invalid Token:
-                    summary: Invalid Token
-                    value:
-                      msg: Invalid Token
-                      
-                  Token has expired:
-                    summary: Token Has Expired
-                    value:
-                      msg: Token has expired
-      
-        422:
-         description: Sem autorização/ Token inválido
-         content:
-          application/json:
+                  Processamento_Uvas_De_Mesa:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Cultivar:
+                          type: string
+                          example: TINTAS
+                        Quantidade (Kg): 
+                          type: string
+                          example: 502.666.358
+                  
+                  Processamento_Viníferas:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Cultivar:
+                          type: string
+                          example: TINTAS
+                        Quantidade (Kg): 
+                          type: string
+                          example: 502.666.358
+                   
+        '400':  
+          $ref: '#/components/responses/Parametro_Invalido'
+        '401':
+          $ref: '#/components/responses/Sem_Autorizacao1'
+    
+    
+  /comercializacao:
+    get:
+      summary: Dados de produção de vinhos
+      parameters:
+        - $ref: '#/components/parameters/anoParam'
+      security: 
+        - bearerAuth: []
+      responses:
+        200:
+          description: Requisição bem sucedida, com dados retornados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Comercializacao:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Produto:
+                          type: string
+                          example: VINHO DE MESA
+                        Quantidade(L.): 
+                          type: string
+                          example: 169.762.429
+
+        '400':
+          $ref: '#/components/responses/Parametro_Invalido'
+        '401':
+          $ref: '#/components/responses/Sem_Autorizacao1'
   
-            examples:
-              
-              JWT Invalid Token:
-                summary: JWT Token format invalid
-                value:
-                  msg: Invalid header padding
-            
-                
-  
+  /importacao:
+    get:
+      summary: Dados de importação de espumantes
+      parameters:
+        - $ref: '#/components/parameters/anoParam'
+      security: 
+        - bearerAuth: []
+      responses:
+        200:
+          description: Requisição bem sucedida, com dados retornados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  Espumantes:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Países:
+                          type: string
+                          example: Africa do Sul
+                        Quantidade (Kg): 
+                          type: string
+                          example: 7.650
+                        Valor (US$):
+                          type: string
+                          example: 69.382
+                        
+                  Suco_De_Uva:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Países:
+                          type: string
+                          example: Africa do Sul
+                        Quantidade (Kg): 
+                          type: string
+                          example: 7.650
+                        Valor (US$):
+                          type: string
+                          example: 69.382
+                  
+                  Uvas_Frescas:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Países:
+                          type: string
+                          example: Africa do Sul
+                        Quantidade (Kg): 
+                          type: string
+                          example: 7.650
+                        Valor (US$):
+                          type: string
+                          example: 69.382
+                          
+                  Uvas_Passas:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Países:
+                          type: string
+                          example: Africa do Sul
+                        Quantidade (Kg): 
+                          type: string
+                          example: 7.650
+                        Valor (US$):
+                          type: string
+                          example: 69.382
+                          
+                  Vinhos_De_Mesa:  # Dados de produção de vinhos
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        Países:
+                          type: string
+                          example: Africa do Sul
+                        Quantidade (Kg): 
+                          type: string
+                          example: 7.650
+                        Valor (US$):
+                          type: string
+                          example: 69.382
+        '400':
+          $ref: '#/components/responses/Parametro_Invalido'
+        '401':
+          $ref: '#/components/responses/Sem_Autorizacao1'
+          
+    
