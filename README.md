@@ -1,7 +1,7 @@
 # TECH-CHALLENGE
 
 # DOCUMENTAÇÃO SWAGGER <H6>
-# https://techchallenge02.azurewebsites.net/apiDocs <H2>
+# http://127.0.0.1:5000//apiDocs <H2>
 >
 ## INSTALAÇÃO DAS DEPENDÊNCIAS:
     
