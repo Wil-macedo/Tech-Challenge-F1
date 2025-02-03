@@ -1,7 +1,7 @@
 # TECH-CHALLENGE
 
 # DOCUMENTAÇÃO SWAGGER <H6>
-# http://127.0.0.1:5000//apiDocs <H2>
+# /apiDocs <H2>
 >
 ## INSTALAÇÃO DAS DEPENDÊNCIAS:
     
