@@ -1,7 +1,7 @@
 # TECH-CHALLENGE
 
 # DOCUMENTAÇÃO SWAGGER <H6>
-# /apiDocs <H2>
+# /apidocs <H2>
 >
 ## INSTALAÇÃO DAS DEPENDÊNCIAS:
     
