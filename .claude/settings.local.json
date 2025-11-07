@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pylint:*)",
+      "Bash(python -m flake8:*)",
+      "Bash(python -m pycodestyle:*)",
+      "Bash(pip install:*)",
+      "Bash(git mv:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

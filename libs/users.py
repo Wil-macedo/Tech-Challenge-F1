@@ -1,3 +1,7 @@
+"""
+User credentials for authentication.
+"""
+
 # Lista de usuários
 users = {
     'user2': {
